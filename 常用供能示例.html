@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>常用方法</title>
+</head>
+
+<body>
+    <!--
+         目录
+    常用var定义 
+    获取带分页的数据
+    搜索栏
+    api请求实例
+    全选按钮点击
+    tabbar切换
+    -->
+    <!--加载更多 html代码-->
+    <div class="weui-panel weui-panel_access" style="background: transparent;display: none"
+        id="sponsorHistoryListPanel">
+        <div class="weui-cell" id="initTipText" style="display: none;">
+            <div class="weui-cell__bd">
+                <p class="loadingText text-center">正在加载中...</p>
+            </div>
+        </div>
+        <div hidden="" id="moreBtn" class="weui-cell" style="">
+            <a id="loadMoreText" style="color: #7d7d7d" class="weui-form-preview__btn weui-form-preview__btn_primary"
+                href="javascript:">点击加载更多</a>
+        </div>
+    </div>
+
+    <!-- 搜索组件html部分 -->
+    <div class="weui-search-bar" id="searchBar">
+        <form class="weui-search-bar__form">
+            <div class="weui-search-bar__box">
+                <i class="weui-icon-search"></i>
+                <input type="search" class="weui-search-bar__input" id="searchInput" placeholder="请输入你的会员名" required="">
+                <a href="javascript:" class="weui-icon-clear" id="searchClear"></a>
+            </div>
+            <label class="weui-search-bar__label" id="searchText">
+                <i class="weui-icon-search"></i>
+                <span>请输入你的会员名</span>
+            </label>
+        </form>
+        <a href="javascript:" class="weui-search-bar__cancel-btn" id="searchCancel">搜索</a>
+    </div>
+
+    <!--全选按钮 html部分-->
+    <div class="weui-cells weui-cells_checkbox" id="btn_all" style="margin-top: 0;display: none">
+        <label class="weui-cell weui-check__label" for="allchoose">
+            <div class="weui-cell__hd">
+                <input type="checkbox" class="weui-check" name="checkAll" id="allchoose">
+                <i class="weui-icon-checked"></i>
+            </div>
+            <div class="weui-cell__bd">
+                <p>全选</p>
+            </div>
+        </label>
+    </div>
+
+    <!-- tabbar切换 html部分 -->
+    <div style="height: 52px">
+        <div class="weui-tab">
+            <div class="weui-navbar navbar">
+                <a class="weui-navbar__item navbar__item weui-bar__item_on" href="javascript:;" data_toggle="#all">全部</a>
+                <a class="weui-navbar__item navbar__item" href="javascript:;" data_toggle="#waitPay">待支付</a>
+                <a class="weui-navbar__item navbar__item" href="javascript:;" data_toggle="#waitDeliever">待发货</a>
+                <a class="weui-navbar__item navbar__item" href="javascript:;" data_toggle="#alreadyDeliever">已发货</a>
+                <a class="weui-navbar__item navbar__item" href="javascript:;" data_toggle="#alreadyCollect">已收货</a>
+            </div>
+        </div>
+    </div>
+    <div class="weui-tab__bd shop_order_container" style="margin-top: 10px">
+        <div id="all" class="weui_tab_bd_item weui_tab_bd_item_active">选项内容1</div>
+        <div id="waitPay" class="weui_tab_bd_item">选项内容2</div>
+        <div id="waitDeliever" class="weui_tab_bd_item">选项内容3</div>
+        <div id="alreadyDeliever" class="weui_tab_bd_item">选项内容4</div>
+        <div id="alreadyCollect" class="weui_tab_bd_item">选项内容5</div>
+    </div>
+
+</body>
+<!-- 常用php -->
+<?php $association_id= Request\Request::get('association_id');?>
+<script>
+    //常用var定义
+    var association_id = '<?=$association_id?>';
+    var sendParams = {};
+    var currentUrl = window.location.href;
+    var nodata = '<div class="weui-msg nodata">' +
+        '<div class="weui-msg__icon-area"><i class="weui-icon-warn  weui-icon_msg"></i></div>' +
+        '<div class="weui-msg__text-area">' +
+        '<h2 class="weui-msg__title">暂无数据</h2>' +
+        '</div>' +
+        '</div>';
+
+    //获取带分页的数据
+    new page.pageListPanel({
+        url: '/Index/Member/getMemberCertificateList',
+        panelId: 'sponsorHistoryListPanel',
+        initTipId: 'initTipText',
+        loadMoreBtnId: 'moreBtn',
+        urlParams: { association_id: association_id },
+        callBack: function (res) {
+            console.log('获取列表');
+            console.log(res);
+            if (res.code === 0 && res.data.page && res.data.data.length > 0) {
+                getDefList(res);
+            } else {
+                $('#nodataWrap').empty().append(nodata);
+            }
+        }
+    });
+    function getDefList(res) {
+        if (res.data.page.totalPage > 1) {//分页大于1 显示 测试阶段0
+            $('#sponsorHistoryListPanel').show();
+        }
+        var list = '';
+        var data = res.data.data;
+        var current;
+        var pageSize;
+        for (var k in data) {
+            this.data = data[k];
+            this.id = this.data.id;
+            this.uid = this.data.uid;
+            list += '<div>' + this.id + '</div>';
+        }
+        if (list) {
+            $('#all').empty().append(list);//插入html
+        } else {
+            $('#nodataWrap').empty().append(nodata);//显示无数据
+        }
+    }
+
+    //搜索栏
+    $(function () {
+        var $searchBar = $('#searchBar'),
+            $searchText = $('#searchText'),
+            $searchInput = $('#searchInput'),
+            $searchClear = $('#searchClear'),
+            $searchCancel = $('#searchCancel');
+
+        $(document).keydown(function (event) {
+            switch (event.keyCode) {
+                case 13: return false;
+            }
+        });
+        function hideSearchResult() {
+            $searchInput.val('');
+        }
+        //            function cancelSearch(){
+        //                hideSearchResult();
+        //                $searchBar.removeClass('weui-search-bar_focusing');
+        //                $searchText.show();
+        //            }
+
+        $searchText.on('click', function () {
+            $searchBar.addClass('weui-search-bar_focusing');
+            $searchInput.focus();
+        });
+
+        $searchClear.on('click', function () {
+            hideSearchResult();
+            $searchInput.focus();
+        });
+        /*搜索*/
+        $searchCancel.on('click', function () {
+            console.log($searchInput.val());
+        });
+    });
+    //搜索栏结束
+
+    //api请求实例
+    var sendParams = {};
+    var currentUrl = window.location.href;
+    page.apiPost('/Index/Certifica/batchSendGoods', sendParams, function (res) {
+        console.log(res);
+        if (res.code === 0) {
+            webapp.success('发货成功', 1500, currentUrl);
+        } else {
+            webapp.error(res.msg);
+        }
+    })
+
+    //全选按钮点击
+    $('#allchoose').click(function () {
+        var isAllChoice = $('#allchoose').is(':checked');
+        //            console.log(isAllChoice);
+        if (isAllChoice) {
+            //选中
+            $('input[name=checkbox_waitDeliever]').prop('checked', true);
+        } else {
+            $('input[name=checkbox_waitDeliever]').prop('checked', false);
+        }
+    });
+
+    //tabbar切换
+    $('.weui-navbar__item').on('click', function () {
+        $(this).addClass('weui-bar__item_on').siblings('.weui-bar__item_on').removeClass('weui-bar__item_on');
+        //内容切换
+        $(".weui-tab__bd .weui_tab_bd_item_active").removeClass('weui_tab_bd_item_active');
+        var data_toggle = $(this).attr("data_toggle");
+        $(data_toggle).addClass("weui_tab_bd_item_active");
+    });
+    //tabbar切换结束
+</script>
+
+</html>
